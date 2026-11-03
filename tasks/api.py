@@ -15,8 +15,8 @@ router = Router(tags=["tasks"])
 def check_relations(project, payload):
     if payload.assignee_id is not None and not User.objects.filter(id=payload.assignee_id).exists():
         raise HttpError(400, f"User {payload.assignee_id} doesnot exist")
-    labels = list(project.labels.filter(id__in=payload.label_ids))
-    if len(labels) != len(set(payload.label_ids)):
+    labels = list(project.labels.filter(id__in=payload.labels_ids))
+    if len(labels) != len(set(payload.labels_ids)):
         raise HttpError(400, "Unknown label id for this project")
     return labels
                           
@@ -24,13 +24,13 @@ def check_relations(project, payload):
 @router.get("/", response=list[TaskOut])
 def list_tasks(request, project_id: Path[int]):
     project = get_object_or_404(Project, id=project_id)
-    return project.tasks.order_by("id")
+    return project.tasks.select_related("assignee").prefetch_related("labels").order_by("id")
 
 @router.post("/", response={201: TaskOut})
 def create_task(request, project_id: Path[int], payload: TaskIn):
     project = get_object_or_404(Project, id=project_id)
     labels = check_relations(project, payload)
-    task = Task.objects.create(project=project, **payload.dict(exclude={"label_ids"}))
+    task = Task.objects.create(project=project, **payload.dict(exclude={"labels_ids"}))
     task.labels.set(labels)
     return Status(201, task)
 

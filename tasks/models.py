@@ -3,10 +3,32 @@ from django.conf import settings
 
 from projects.models import Project, Label
 
+class TaskStatus(models.TextChoices):
+        TODO = "todo"
+        IN_PROGRESS = "in_progress"
+        DONE = "done"
+
+class Priority(models.IntegerChoices):
+    """1 = low, 2 = medium, 3 = high, 4 = urgent"""
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    URGENT = 4
+
+# The statuses a task may move to from each status
+ALLOWED_TRANSITIONS = {
+    TaskStatus.TODO : {TaskStatus.IN_PROGRESS},
+    TaskStatus.IN_PROGRESS: {TaskStatus.TODO, TaskStatus.DONE},
+    TaskStatus.DONE: {TaskStatus.IN_PROGRESS}
+}
+
 class Task(models.Model):
     project = models.ForeignKey(Project, related_name='tasks', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(default='')
+    status = models.CharField(max_length=20, choices=TaskStatus, default=TaskStatus.TODO)
+    priority = models.IntegerField(choices=Priority, default=Priority.MEDIUM)
+    due_date = models.DateField(null=True, blank=True)
     assignee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
