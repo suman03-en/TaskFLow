@@ -4,18 +4,10 @@ from pydantic_core import PydanticCustomError
 from pydantic import field_validator, model_validator
 
 from projects.schemas import LabelOut
+from accounts.schemas import UserOut
+
 from .models import Task, Priority, TaskStatus
 
-class UserOut(ModelSchema):
-    display_name: str
-
-    class Meta:
-        model = User
-        fields = ["id", "username"]
-
-    @staticmethod
-    def resolve_display_name(user):
-        return user.get_full_name() or user.username
 
 class TaskUpdate(ModelSchema):
     priority: Priority = Priority.MEDIUM
